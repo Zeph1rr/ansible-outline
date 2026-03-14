@@ -13,19 +13,22 @@
 # Dry-run (preview what will be removed):
 #   ansible-playbook -i inventory/hosts.yml uninstall.yml --check
 
+- name: Confirm uninstall
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Prompt for confirmation
+      ansible.builtin.pause:
+        prompt: >
+          WARNING: This will permanently remove Outline from all targeted hosts.
+          Press Enter to continue or Ctrl+C to abort.
+
 - name: Uninstall Outline VPN
   hosts: vpn_servers
   gather_facts: false
 
   tasks:
-    - name: Confirm uninstall
-      ansible.builtin.pause:
-        prompt: >
-          WARNING: This will permanently remove Outline from
-          {{ ansible_play_hosts | join(', ') }}.
-          Press Enter to continue or Ctrl+C to abort.
-      run_once: true
-      delegate_to: localhost
 
     # ── Stop and remove containers ────────────────────────────────────────────
 
