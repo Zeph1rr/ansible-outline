@@ -1,0 +1,32 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint playbooks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install ansible ansible-lint
+
+      - name: Run ansible-lint on playbook.yml
+        run: ansible-lint playbook.yml
+
+      - name: Run ansible-lint on uninstall.yml
+        run: ansible-lint uninstall.yml
+
+      - name: Check YAML syntax of inventory example
+        run: python3 -c "import yaml; yaml.safe_load(open('inventory/hosts.yml.example'))"

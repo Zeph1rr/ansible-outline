@@ -1,0 +1,3 @@
+# На control node (машина, с которой запускается ansible-playbook)
+ansible>=9.0
+outline-vpn-api-client>=1.3.0

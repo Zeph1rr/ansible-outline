@@ -1,0 +1,34 @@
+---
+# Применяет настройки Outline через management API.
+# Модуль outline_server идемпотентен: changed=true только если
+# что-то реально изменилось.
+#
+# Запускается на control node (delegate_to: localhost) —
+# библиотека outline-vpn-api-client нужна только там.
+# URL пересобирается с ansible_host вместо внешнего IP,
+# чтобы API был доступен с control node.
+
+- name: Fail if management_url is still unknown
+  fail:
+    msg: >
+      outline_management_url is not set for host {{ inventory_hostname }}.
+      Run the full playbook first (without --skip-tags install) to install
+      Outline and auto-discover the URL.
+  when: outline_management_url is none
+
+- name: Apply Outline server configuration
+  outline_server:
+    management_url:       "{{ outline_management_url }}"
+    server_name:          "{{ outline_server_name | default(omit) }}"
+    hostname:             "{{ outline_hostname | default(omit) }}"
+    default_port:         "{{ outline_default_port | default(omit) }}"
+    default_limit_bytes:  "{{ outline_default_limit_bytes | default(omit) }}"
+    metrics_enabled:      "{{ outline_metrics_enabled | default(omit) }}"
+  delegate_to: localhost
+  become: false
+  register: outline_config_result
+
+- name: Show configuration changes
+  debug:
+    msg: "{{ inventory_hostname }}: {{ outline_config_result.changes }}"
+  when: outline_config_result.changed

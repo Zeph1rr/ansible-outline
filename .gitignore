@@ -1,0 +1,27 @@
+# Виртуальное окружение Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Факты с management_url — содержат токены, добавь в git только если доверяешь репозиторию
+# Если репозиторий публичный — зашифруй через ansible-vault перед коммитом
+inventory/facts/
+
+# Реальный inventory с IP и паролями — никогда не коммить в публичный репо
+inventory/hosts.yml
+
+# Ansible retry файлы
+*.retry
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db

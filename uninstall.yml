@@ -1,0 +1,74 @@
+---
+# Удаляет Outline VPN с серверов и очищает локальные facts.
+#
+# ВНИМАНИЕ: это деструктивная операция. Все данные Outline
+# (ключи доступа, настройки сервера) будут удалены безвозвратно.
+#
+# Удалить со всех серверов:
+#   ansible-playbook -i inventory/hosts.yml uninstall.yml
+#
+# Удалить с одного хоста:
+#   ansible-playbook -i inventory/hosts.yml uninstall.yml --limit eu-node-1
+#
+# Dry-run (посмотреть что будет удалено):
+#   ansible-playbook -i inventory/hosts.yml uninstall.yml --check
+
+- name: Uninstall Outline VPN
+  hosts: vpn_servers
+  gather_facts: false
+
+  tasks:
+    - name: Confirm uninstall
+      pause:
+        prompt: >
+          WARNING: This will permanently remove Outline from
+          {{ ansible_play_hosts | join(', ') }}.
+          Press Enter to continue or Ctrl+C to abort.
+      run_once: true
+      delegate_to: localhost
+
+    # ── Остановка и удаление контейнеров ─────────────────────────────────────
+
+    - name: Check if Docker is available
+      command: docker info
+      register: docker_info
+      changed_when: false
+      failed_when: false
+
+    - name: Stop and remove Outline containers
+      shell: |
+        docker stop shadowbox watchtower 2>/dev/null || true
+        docker rm   shadowbox watchtower 2>/dev/null || true
+      when: docker_info.rc == 0
+      changed_when: true
+
+    - name: Remove Outline Docker image
+      shell: |
+        docker rmi $(docker images | grep 'outline\|shadowbox\|watchtower' | awk '{print $3}') 2>/dev/null || true
+      when: docker_info.rc == 0
+      changed_when: true
+
+    # ── Удаление файлов Outline ───────────────────────────────────────────────
+
+    - name: Remove Outline data directory
+      file:
+        path: /opt/outline
+        state: absent
+
+    - name: Remove get_outline_str utility
+      file:
+        path: /usr/local/bin/get_outline_str
+        state: absent
+
+    # ── Очистка локальных facts на control node ───────────────────────────────
+
+    - name: Remove local facts file for this host
+      delegate_to: localhost
+      become: false
+      file:
+        path: "{{ playbook_dir }}/inventory/facts/{{ inventory_hostname }}.yml"
+        state: absent
+
+    - name: Uninstall complete
+      debug:
+        msg: "Outline successfully removed from {{ inventory_hostname }} ({{ ansible_host }})"
