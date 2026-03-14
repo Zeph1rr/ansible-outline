@@ -1,13 +1,13 @@
 ---
-# Значения по умолчанию для роли.
-# Переопределяются через group_vars или host_vars (переменные хоста в hosts.yml).
+# Role default values.
+# Override via group_vars or per-host variables in hosts.yml.
 
 outline_server_name: "Outline VPN"
 outline_metrics_enabled: false
-outline_default_port: ~          # ~ = не менять
-outline_default_limit_bytes: ~   # ~ = не менять
-outline_hostname: ~              # ~ = не менять (используется IP сервера)
+outline_default_port: ~          # ~ = leave unchanged
+outline_default_limit_bytes: ~   # ~ = leave unchanged; 0 = remove limit
+outline_hostname: ~              # ~ = leave unchanged (server IP is used)
 
-# Заполняется автоматически после установки.
-# Можно задать вручную для уже существующего сервера.
+# Populated automatically after installation.
+# Can be set manually for an already-existing server.
 outline_management_url: ~

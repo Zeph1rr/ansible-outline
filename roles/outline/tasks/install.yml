@@ -1,19 +1,19 @@
 ---
-# ── Установка Docker ─────────────────────────────────────────────────────────
+# ── Docker installation ───────────────────────────────────────────────────────
 
 - name: Check if Docker is installed
-  command: docker --version
-  register: docker_check
+  ansible.builtin.command: docker --version
+  register: outline_docker_check
   changed_when: false
   failed_when: false
   tags: install
 
 - name: Install Docker
-  when: docker_check.rc != 0
+  when: outline_docker_check.rc != 0
   tags: install
   block:
     - name: Install Docker dependencies
-      apt:
+      ansible.builtin.apt:
         name:
           - ca-certificates
           - curl
@@ -22,7 +22,7 @@
         update_cache: true
 
     - name: Add Docker GPG key
-      shell: |
+      ansible.builtin.shell: |
         install -m 0755 -d /etc/apt/keyrings
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
         chmod a+r /etc/apt/keyrings/docker.asc
@@ -30,17 +30,19 @@
         creates: /etc/apt/keyrings/docker.asc
 
     - name: Add Docker apt repository
-      shell: |
+      ansible.builtin.shell: |
+        set -o pipefail
         echo \
           "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
           https://download.docker.com/linux/ubuntu \
           $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
           tee /etc/apt/sources.list.d/docker.list > /dev/null
       args:
+        executable: /bin/bash
         creates: /etc/apt/sources.list.d/docker.list
 
     - name: Install Docker packages
-      apt:
+      ansible.builtin.apt:
         name:
           - docker-ce
           - docker-ce-cli
@@ -51,15 +53,15 @@
         update_cache: true
 
     - name: Start and enable Docker
-      systemd:
+      ansible.builtin.systemd:
         name: docker
         state: started
         enabled: true
 
-# ── Установка Outline ────────────────────────────────────────────────────────
+# ── Outline installation ──────────────────────────────────────────────────────
 
 - name: Check if Outline is already installed
-  stat:
+  ansible.builtin.stat:
     path: /opt/outline/access.txt
   register: outline_access_file
   tags: install
@@ -69,13 +71,13 @@
   tags: install
   block:
     - name: Download Outline installer
-      get_url:
+      ansible.builtin.get_url:
         url: "https://raw.githubusercontent.com/Jigsaw-Code/outline-server/master/src/server_manager/install_scripts/install_server.sh"
         dest: /tmp/install_outline.sh
         mode: "0755"
 
     - name: Run Outline installer
-      shell: >
+      ansible.builtin.shell: >
         bash /tmp/install_outline.sh
         {% if outline_hostname is not none %}--hostname {{ outline_hostname }}{% endif %}
       args:
@@ -83,14 +85,14 @@
       register: outline_install_result
 
     - name: Clean up installer script
-      file:
+      ansible.builtin.file:
         path: /tmp/install_outline.sh
         state: absent
 
-# ── Копируем вспомогательный скрипт на сервер ───────────────────────────────
+# ── Copy helper script to server ─────────────────────────────────────────────
 
 - name: Copy get_outline_str utility to server
-  copy:
+  ansible.builtin.copy:
     src: get_outline_str.sh
     dest: /usr/local/bin/get_outline_str
     mode: "0755"
@@ -98,47 +100,45 @@
     group: root
   tags: install
 
-# ── Читаем management_url и сохраняем facts ──────────────────────────────────
-# Эти задачи выполняются всегда — нужны и при установке, и при конфигурации.
+# ── Read management_url and persist facts ────────────────────────────────────
 
 - name: Read access.txt from server
-  slurp:
+  ansible.builtin.slurp:
     src: /opt/outline/access.txt
   register: outline_access_raw
   when: outline_management_url is none
 
 - name: Parse management_url from access.txt
-  set_fact:
+  ansible.builtin.set_fact:
     outline_management_url: "{{ outline_access_raw.content | b64decode | regex_search('apiUrl:(.+)', '\\1') | first | trim }}"
   when: outline_management_url is none
 
 - name: Replace external IP with ansible_host in management_url
-  set_fact:
+  ansible.builtin.set_fact:
     outline_management_url: "{{ outline_management_url | regex_replace('https://[^:]+:', 'https://' + ansible_host + ':') }}"
 
 - name: Update apiUrl in access.txt on server
-  replace:
+  ansible.builtin.replace:
     path: /opt/outline/access.txt
     regexp: 'apiUrl:https://[^:]+:'
     replace: "apiUrl:https://{{ ansible_host }}:"
 
 - name: Ensure facts directory exists (control node)
-  delegate_to: localhost
-  become: false
-  run_once: false
-  file:
+  ansible.builtin.file:
     path: "{{ playbook_dir }}/inventory/facts"
     state: directory
     mode: "0755"
-
-- name: Persist management_url to local facts file
   delegate_to: localhost
   become: false
-  copy:
+
+- name: Persist management_url to local facts file
+  ansible.builtin.copy:
     content: |
-      # Auto-generated by ansible-outline. Do not edit manually.
+      # Auto-generated by ansible-outline-deploy. Do not edit manually.
       # Host: {{ inventory_hostname }} ({{ ansible_host }})
       outline_management_url: "{{ outline_management_url }}"
     dest: "{{ playbook_dir }}/inventory/facts/{{ inventory_hostname }}.yml"
     mode: "0600"
+  delegate_to: localhost
+  become: false
   changed_when: false

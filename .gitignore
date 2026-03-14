@@ -1,17 +1,17 @@
-# Виртуальное окружение Python
+# Python virtual environment
 venv/
 .venv/
 __pycache__/
 *.pyc
 
-# Факты с management_url — содержат токены, добавь в git только если доверяешь репозиторию
-# Если репозиторий публичный — зашифруй через ansible-vault перед коммитом
+# Facts with management_url — contain API tokens.
+# Commit only if you trust the repository, or encrypt with ansible-vault first.
 inventory/facts/
 
-# Реальный inventory с IP и паролями — никогда не коммить в публичный репо
+# Real inventory with IPs and passwords — never commit to a public repo
 inventory/hosts.yml
 
-# Ansible retry файлы
+# Ansible retry files
 *.retry
 
 # IDE

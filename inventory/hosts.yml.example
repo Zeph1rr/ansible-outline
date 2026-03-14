@@ -2,28 +2,28 @@
 all:
   children:
     vpn_servers:
-      # ── SSH настройки по умолчанию для всей группы ───────────────────────────
+      # ── SSH defaults for the whole group ─────────────────────────────────────
       vars:
         ansible_user: root
         ansible_ssh_private_key_file: ~/.ssh/id_rsa
-        # ansible_ssh_pass: "your_password"   # альтернатива ключу
+        # ansible_ssh_pass: "your_password"   # alternative to key auth
         ansible_python_interpreter: /usr/bin/python3
 
-        # ── Outline настройки по умолчанию (переопределяются на уровне хоста) ──
+        # ── Outline defaults (overridden at host level) ───────────────────────
         outline_server_name: "Outline VPN"
         outline_metrics_enabled: false
-        outline_default_port: ~          # ~ = не менять
-        outline_default_limit_bytes: ~   # ~ = не менять; 0 = удалить лимит
-        outline_hostname: ~              # ~ = использовать IP сервера
+        outline_default_port: ~          # ~ = leave unchanged
+        outline_default_limit_bytes: ~   # ~ = leave unchanged; 0 = remove limit
+        outline_hostname: ~              # ~ = use server IP
 
       hosts:
 
-        # ── Минимальный хост — всё берётся из group vars ─────────────────────
+        # ── Minimal host — everything taken from group vars ───────────────────
         my-server-1:
           ansible_host: 1.2.3.4
           outline_server_name: "My Server 1"
 
-        # ── Хост с нестандартным SSH-портом и паролем ────────────────────────
+        # ── Host with password auth and non-standard SSH port ─────────────────
         my-server-2:
           ansible_host: 5.6.7.8
           ansible_port: 2222
@@ -34,15 +34,15 @@ all:
           outline_default_limit_bytes: 53687091200   # 50 GB
           outline_metrics_enabled: true
 
-        # ── Хост с кастомным hostname в ссылках доступа ──────────────────────
+        # ── Host with custom hostname in access key URLs ──────────────────────
         my-server-3:
           ansible_host: 9.10.11.12
           outline_server_name: "My Server 3"
           outline_hostname: "vpn.mycompany.com"
           outline_default_port: 443
 
-        # ── Уже установлен: management_url задаётся вручную ─────────────────
-        # ── (обычно заполняется автоматически после первого deploy) ──────────
+        # ── Already installed: management_url set manually ────────────────────
+        # ── (usually auto-populated after the first deploy) ──────────────────
         # my-server-4:
         #   ansible_host: 11.22.33.44
         #   outline_management_url: "https://11.22.33.44:12345/AbCdEfGhIj"

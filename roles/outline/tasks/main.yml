@@ -1,6 +1,6 @@
 ---
 - name: Install Outline
-  import_tasks: install.yml
+  ansible.builtin.import_tasks: install.yml
 
 - name: Configure Outline
-  import_tasks: configure.yml
+  ansible.builtin.import_tasks: configure.yml

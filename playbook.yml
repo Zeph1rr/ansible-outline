@@ -1,30 +1,13 @@
 ---
-# Раскатывает Outline VPN на все серверы из inventory.
-#
-# Запуск:
-#   ansible-playbook -i inventory/hosts.yml playbook.yml
-#
-# Только переконфигурировать (без переустановки):
-#   ansible-playbook -i inventory/hosts.yml playbook.yml --skip-tags install
-#
-# Один хост:
-#   ansible-playbook -i inventory/hosts.yml playbook.yml --limit eu-node-1
-#
-# Dry-run (check mode):
-#   ansible-playbook -i inventory/hosts.yml playbook.yml --check --diff
-
 - name: Deploy and configure Outline VPN servers
   hosts: vpn_servers
   gather_facts: false
 
-  # Подгружаем сохранённые management_url из локальных facts-файлов.
-  # Файл создаётся автоматически при первом запуске playbook.
-  # Если файла нет — переменная остаётся из inventory (или null).
   pre_tasks:
     - name: Load persisted facts for this host
-      include_vars:
+      ansible.builtin.include_vars:
         file: "{{ playbook_dir }}/inventory/facts/{{ inventory_hostname }}.yml"
-      failed_when: false   # файла может не существовать при первом запуске
+      failed_when: false
       tags: [always]
 
   roles:

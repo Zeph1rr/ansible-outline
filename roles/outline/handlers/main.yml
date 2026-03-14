@@ -1,0 +1,4 @@
+---
+- name: Show configuration changes
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname }}: {{ outline_config_result.changes }}"

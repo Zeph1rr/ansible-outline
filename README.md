@@ -1,6 +1,6 @@
 # ansible-outline-deploy
 
-[![CI](https://img.shields.io/github/actions/workflow/status/Zeph1rr/ansible-outline/tests.yml?style=plastic&label=lint)](https://github.com/zeph1rr/ansible-outline/actions/workflows/lint.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/Zeph1rr/ansible-outline/lint.yml?style=plastic&label=lint)](https://github.com/zeph1rr/ansible-outline/actions/workflows/lint.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 IaC tool for deploying and managing [Outline VPN](https://getoutline.org/) servers via Ansible.

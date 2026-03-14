@@ -1,16 +1,16 @@
 ---
-# Удаляет Outline VPN с серверов и очищает локальные facts.
+# Removes Outline VPN from servers and cleans up local facts.
 #
-# ВНИМАНИЕ: это деструктивная операция. Все данные Outline
-# (ключи доступа, настройки сервера) будут удалены безвозвратно.
+# WARNING: this is a destructive operation. All Outline data
+# (access keys, server settings) will be permanently deleted.
 #
-# Удалить со всех серверов:
+# Remove from all servers:
 #   ansible-playbook -i inventory/hosts.yml uninstall.yml
 #
-# Удалить с одного хоста:
-#   ansible-playbook -i inventory/hosts.yml uninstall.yml --limit eu-node-1
+# Remove from a single host:
+#   ansible-playbook -i inventory/hosts.yml uninstall.yml --limit my-server
 #
-# Dry-run (посмотреть что будет удалено):
+# Dry-run (preview what will be removed):
 #   ansible-playbook -i inventory/hosts.yml uninstall.yml --check
 
 - name: Uninstall Outline VPN
@@ -19,7 +19,7 @@
 
   tasks:
     - name: Confirm uninstall
-      pause:
+      ansible.builtin.pause:
         prompt: >
           WARNING: This will permanently remove Outline from
           {{ ansible_play_hosts | join(', ') }}.
@@ -27,48 +27,51 @@
       run_once: true
       delegate_to: localhost
 
-    # ── Остановка и удаление контейнеров ─────────────────────────────────────
+    # ── Stop and remove containers ────────────────────────────────────────────
 
     - name: Check if Docker is available
-      command: docker info
-      register: docker_info
+      ansible.builtin.command: docker info
+      register: outline_docker_info
       changed_when: false
       failed_when: false
 
     - name: Stop and remove Outline containers
-      shell: |
+      ansible.builtin.shell: |
         docker stop shadowbox watchtower 2>/dev/null || true
         docker rm   shadowbox watchtower 2>/dev/null || true
-      when: docker_info.rc == 0
+      when: outline_docker_info.rc == 0
       changed_when: true
 
-    - name: Remove Outline Docker image
-      shell: |
-        docker rmi $(docker images | grep 'outline\|shadowbox\|watchtower' | awk '{print $3}') 2>/dev/null || true
-      when: docker_info.rc == 0
+    - name: Remove Outline Docker images
+      ansible.builtin.shell: |
+        set -o pipefail
+        docker images | grep -E 'outline|shadowbox|watchtower' | awk '{print $3}' | xargs docker rmi 2>/dev/null || true
+      args:
+        executable: /bin/bash
+      when: outline_docker_info.rc == 0
       changed_when: true
 
-    # ── Удаление файлов Outline ───────────────────────────────────────────────
+    # ── Remove Outline files ──────────────────────────────────────────────────
 
     - name: Remove Outline data directory
-      file:
+      ansible.builtin.file:
         path: /opt/outline
         state: absent
 
     - name: Remove get_outline_str utility
-      file:
+      ansible.builtin.file:
         path: /usr/local/bin/get_outline_str
         state: absent
 
-    # ── Очистка локальных facts на control node ───────────────────────────────
+    # ── Clean up local facts on control node ─────────────────────────────────
 
     - name: Remove local facts file for this host
-      delegate_to: localhost
-      become: false
-      file:
+      ansible.builtin.file:
         path: "{{ playbook_dir }}/inventory/facts/{{ inventory_hostname }}.yml"
         state: absent
+      delegate_to: localhost
+      become: false
 
     - name: Uninstall complete
-      debug:
+      ansible.builtin.debug:
         msg: "Outline successfully removed from {{ inventory_hostname }} ({{ ansible_host }})"
